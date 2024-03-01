@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>CommonPool search</title>
+		<meta charset="utf-8">
+		<style type="text/css">
+			body {
+				margin: 0px;
+			}
+			#preview {
+				position: fixed;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.95);
+				display: none;
+				flex-direction: column;
+				flex-wrap: wrap;
+			}
+			#preview_img {
+				margin: auto;
+				max-width: 95%;
+				max-height: 75%;
+			}
+			#preview_text {
+				font-size: x-large;
+				color: white;
+				height: 70px;
+				text-align: center;
+			}
+			.search {
+				display: flex;
+				flex-direction: row;
+				padding: 8px;
+			}
+            .search_divider {
+                padding-left: 7px;
+                padding-right: 7px;
+            }
+			#search_report {
+				padding-left: 10px;
+			}
+			.results {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: wrap;
+			}
+			.result_box {
+				display: flex;
+				width: 170px;
+				height: 150px;
+				padding: 5px;
+				margin: 5px;
+			}
+			.result_img {
+				margin: auto;
+				max-width: 100%;
+				max-height: 100%;
+			}
+			#sample_result {
+				display: none;
+			}
+			img {
+				box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+			}
+		</style>
+		<script type="text/javascript">
+			var search_url = location.protocol + '//' + location.hostname + ':8983/solr/'
+			var results_per_request = 2000;
+            function get_collection_name() {
+                collection_el = document.getElementById('search_collection');
+                return collection_el.options[collection_el.selectedIndex].text;
+            }
+            function process_obelics(json_response) {
+                window.json_response = json_response;
+                docs_old_format = json_response.response.docs;
+                docs_new_format = [];
+                for (var i = 0; i < docs_old_format.length; i++) {
+                    id = docs_old_format[i].id;
+                    urls = docs_old_format[i].Url[0].split(" ");
+                    for (var j = 0; j < urls.length; j++) {
+                        docs_new_format.push({
+                            'id': id + '_' + j,
+                            'Url': urls[j]
+                        });
+                    }
+                }
+                json_response.response.docs = docs_new_format;
+            }
+			function form_search_url(collection_name, query_url_encoded, start, count) {
+				// collection_name = document.getElementById('search_collection').value;
+				url = search_url + collection_name + '/select?defType=edismax&df=Text&q='
+                    + query_url_encoded + "&start=" + start + "&rows=" + count;
+                if (collection_name == 'obelics') {
+                    url += '&fl=id,Url'
+                }
+                return url
+			}
+			function add_result(url, text, id) {
+				sample_result = document.getElementById('sample_result')
+				new_result_box = sample_result.cloneNode(true);
+				new_result_box.removeAttribute('id');
+                new_result_box.style.display = 'flex';
+				new_img_box = new_result_box.querySelector('.result_img');
+				new_img_box.src = url;
+                if (typeof text !== 'undefined') {
+    				new_img_box.alt = text;
+                } else {
+                    new_img_box.alt = '';
+                }
+				new_img_box.uid = id;
+				sample_result.parentElement.appendChild(new_result_box);
+			}
+            function clear_results() {
+                sample_result = document.getElementById('sample_result')
+                var old_results = [].slice.call(document.getElementsByClassName('result_box'));
+                for (var i = 0; i < old_results.length; i++) {
+                    if (old_results[i] != sample_result) {
+                        old_results[i].remove();
+                    }
+                }
+    }
+			function update_search_report() {
+				total_results = window.data.response.numFound;
+				shown_results = window.data.response.numLoaded;
+                text = 'Shown ' + shown_results + ' of ' + total_results + ' images'
+                if (total_results > shown_results) {
+                    text += ' (scroll to load more)';
+                }
+				document.getElementById('search_report').textContent = text;
+			}
+            function error_report(text) {
+                document.getElementById('search_report').textContent = text;
+            }
+			function search() {
+				text = document.getElementById('search_text').value;
+				var request = new XMLHttpRequest();
+                if (typeof window.request !== 'undefined' && window.request.readyState != 4)
+                    window.request.abort() // linstener for old request should not be run
+                window.request = request
+                collection_name = get_collection_name();
+				url = form_search_url(collection_name, encodeURIComponent(text), 0, results_per_request);
+				console.log(url);
+				request.open("GET", url, true);
+				request.addEventListener("load", function() {
+					if (request.status >= 200 && request.status < 400) {
+						var data = JSON.parse(request.responseText);
+                        data.response.numLoaded = data.response.docs.length;
+                        if (collection_name == 'obelics') {
+                            process_obelics(data);
+                        }
+						window.data = data;
+                        window.data.collection_name = collection_name;
+                        clear_results();
+						for (var i = 0; i < data.response.docs.length; i++) {
+							add_result(
+								data.response.docs[i].Url,
+								data.response.docs[i].Text,
+								data.response.docs[i].id
+							)
+						}
+						update_search_report();
+					}
+				});
+                request.addEventListener("error", function() {
+                    error_report('Error: ' + xhr.status);
+                });
+				request.send();
+                document.getElementById('search_report').textContent = 'Searching...';
+                clear_results();
+			}
+            function load_more() {
+                console.log('loading more results...');
+                last_query = window.data.responseHeader.params.q;
+                var request = new XMLHttpRequest();
+                if (typeof window.request !== 'undefined' && window.request.readyState != 4)
+                    window.request.abort() // linstener for old request should not be run
+                window.request = request;
+                collection_name = window.data.collection_name;
+                url = form_search_url(collection_name, last_query, shown_results, results_per_request);
+                console.log(url);
+                request.open("GET", url, true);
+                request.addEventListener("load", function() {
+                    if (request.status >= 200 && request.status < 400) {
+                        var data = JSON.parse(request.responseText);
+                        num_loaded_from_this_response = data.response.docs.length;
+                        if (collection_name == 'obelics') {
+                            process_obelics(data);
+                        }
+                        for (var i = 0; i < data.response.docs.length; i++) {
+                            add_result(
+                                data.response.docs[i].Url,
+                                data.response.docs[i].Text,
+                                data.response.docs[i].id
+                            )
+                        }
+                        window.data.response.numLoaded += num_loaded_from_this_response;
+                        window.data.response.docs = window.data.response.docs.concat(data.response.docs);
+                        update_search_report();
+                    }
+                });
+                request.addEventListener("error", function() {
+                    error_report('Error: ' + xhr.status);
+                });
+                request.send();
+            }
+			window.onscroll = function(event) {
+				if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight - 1) {
+					//we scrolled to the bottom, need to add mor search results
+					if (typeof window.data === 'undefined') {
+						return; // no search query
+					}
+					total_results = window.data.response.numFound;
+					shown_results = window.data.response.numLoaded;
+					if (shown_results >= total_results) {
+						return;
+					}
+					load_more()
+				}
+			};
+			function show_preview(event) {
+				document.getElementById('preview').style.display = 'flex';
+				document.getElementById('preview_img').src = event.target.src;
+				document.getElementById('preview_img').uid = event.target.uid;
+				document.getElementById('preview_text').textContent = event.target.alt;
+			}
+			function hide_preview() {
+				document.getElementById('preview').style.display = 'none';
+			}
+            document.onkeydown = function(evt) {
+                evt = evt || window.event;
+                var isEscape = false;
+                if ("key" in evt)
+                    isEscape = (evt.key === "Escape" || evt.key === "Esc");
+                else
+                    isEscape = (evt.keyCode === 27);
+                if (isEscape)
+                    hide_preview();
+            };
+            function download(event) {
+                forceDownload(event.target.uid, event.target.src)
+                event.preventDefault();
+                return false;
+            }
+            function forceDownload(uid, src){
+                if (typeof window.data === 'undefined') {
+                    current_query = ''
+                } else {
+                    current_query = window.data.responseHeader.params.q
+                }
+                query_safe = encodeURIComponent(current_query.toLowerCase()).replace(/[^a-z0-9 %]/gi, '_');
+                
+                var xhr = new XMLHttpRequest();
+                url = location.protocol + '//' + location.host + '/img/' + uid + '?src=' + encodeURIComponent(src);
+                console.log(url)
+                xhr.open("GET", url, true);
+                xhr.responseType = "blob";
+                xhr.onload = function(){
+                    content_type = xhr.response.type
+                    if (content_type == 'image/jpeg')
+                        ext = '.jpg'
+                    else if (content_type == 'image/gif')
+                        ext = '.gif'
+                    else
+                        ext = '.png'
+                    fileName = uid + ' [' + query_safe + ']' + ext
+                    
+                    var urlCreator = window.URL || window.webkitURL;
+                    var imageUrl = urlCreator.createObjectURL(this.response);
+                    var tag = document.createElement('a');
+                    tag.href = imageUrl;
+                    tag.download = fileName;
+                    document.body.appendChild(tag);
+                    tag.click();
+                    document.body.removeChild(tag);
+                }
+                xhr.send();
+            }
+		</script>
+	</head>
+	<body>
+        <img src="https://images.lowjerseys.net" style="display:none;"/>
+		<div id="preview" onclick="hide_preview()">
+			<img id="preview_img" oncontextmenu="download(event)" src="https://ylianova.ru/800/600/https/gutta.lv/wp-content/uploads/2015/10/test-img.jpg">
+			<div id="preview_text"> </div>
+		</div>
+		<div class="search">
+            <p class="search_divider">Query:</p>
+			<input id="search_text" type="text"/>
+            <p class="search_divider">Collection:</p>
+			<!--<input id="search_collection" type="text" value="commonpool_part0"/>-->
+            <select id="search_collection" Name="collection">
+                <option>commonpool_part0</option>
+                <option>commonpool_part1</option>
+                <option>commonpool_part2</option>
+                <option>obelics</option>
+            </select>
+            <p class="search_divider"></p>
+			<button onclick="search()">Search</button>
+			<p id="search_report"></p>
+		</div>
+		<div class="results">
+			<div class="result_box" id="sample_result">
+				<img class="result_img" onclick="show_preview(event)" oncontextmenu="download(event)" alt="" src="">
+			</div>
+		</div>
+	</body>
+</html>

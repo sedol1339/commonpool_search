@@ -1,0 +1,8 @@
+.ipynb_checkpoints/
+venv/
+inspector/*/*.csv
+xlarge/
+large/
+medium/
+small/
+misc/

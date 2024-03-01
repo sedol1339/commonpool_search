@@ -1,0 +1,223 @@
+Motivation
+
+Web-scale training data allowed to achieve impressive performance on vision tasks, sometimes claiming to reach or surpass human performance [1, 2, 3]. However, in some scenarios data scarcity is an unavoidable limitation. Examples of such scenarios are labeling assistants, detecting rare animals using trail camera or rare vehicles on the road [4], detecting goods on the shelves [5, 6], and embodied agents that learn new objects from their own experience. More generally speaking, in most vision applications increasing data-efficiency would be a benefit. But the current performance of vision models on few-shot learning tasks still remains very far from human level [7, 8] according to several few-shot classification and detection benchmarks.
+
+Let us keep in mind the following scenario: an agent learns new objects in order to later perform some actions with them, or learn to avoid them, or draw conclusions from their presence. This is what humans easily do throughout life. New objects may be either concept-level ("a headphones") or more fine-grained ("my headphones of special model") and should be learnt from one or few image or video samples, since agent learns objects from it's visual experience. We need at least approximate localization of the object instances in a complex scene, but precise instance segmentation boundaries may be redundant and also hard to annotate, so object detection seems the middle ground for testing the described ability. There is also some list of known objects that an agent is able to detect due to pretraining.
+
+The task of few-shot object detection can take many different forms. For example, the object of interest may be a subclass of a known object, a part of a known object or a completely new object; the object may have exact shape and texture or be a wide concept that exhibit high intra-class variation; the training data may come in form of iconic or in-the-wild views; the ability to recognize several overlapping instances may be required or not; the ability to distinguish from very similar objects may be required or not; text description may be provided or not, etc. If we look at many existing object detection datasets [7, 9, 10, 11, 12, 13], we found that these factors vary greatly, and different cases are better to study separately. In total, we found 11 factors of variation in task specifics that may presumably affect final performance.
+
+Existing benchmarks for few-shot object detection can be divided into two categories. The first benchmarks category are subsets of large-scale datasets LVIS [11] and COCO [14]. This category have several problems. Firstly, few-sot classes may overlap with usual pretraining data and hence may require custom pretraining to fair testing. Secondly, they do not contain diverse domains and hence does not allow cross-domain testing. Thirdly, they contain only objects of the same hierarchy level: for example, it may contain the class "human", but will never contain more fine-grained class "human hand" or "human in the uniform". The second category are specifically assembled benchmarks [7, 13]. These benchmarks are firstly small, and secondly not systamatic: they consist of random sets of objects and their distributions, thus not allowing for systematic testing of factors of variation.
+
+In this work, we collect a few-shot object detection benchmark of 100 objects that follow a specific taxonomy. While testing some model, this allow not only to get "average" performance, but to study its performance in several different cases. Moreover, we provide several subsets for each class to study different scenarios, for example generalizing from iconic views in the train set to in-the-wild test images. We limit ourselves to cases when objects are large and unoccluded enough to be clearly recognizable by humans. Finally, we argue that the standard mAP metrics is not suitable to few-shot scanario, since selecting the ontimal threshold in few-shot regime is non-trivial and quality should be estimated under a given threshold value.
+
+1. He, K., Zhang, X., Ren, S., & Sun, J. (2015). Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification. arXiv, 1502.01852. Retrieved from https://arxiv.org/abs/1502.01852v1
+2. Geirhos, R., Narayanappa, K., Mitzkus, B., Thieringer, T., Bethge, M., Wichmann, F. A., & Brendel, W. (2021). Partial success in closing the gap between human and machine vision. arXiv, 2106.07411. Retrieved from https://arxiv.org/abs/2106.07411v2
+3. Geirhos, R., Narayanappa, K., Mitzkus, B., Thieringer, T., & Brendel, W. (2022). The bittersweet lesson: data-rich models narrow the behavioural gap to human vision. J. Vis., 22(14), 3273. doi: 10.1167/jov.22.14.3273
+4. Li, N., Song, F., Zhang, Y., Liang, P., & Cheng, E. (2022). Traffic Context Aware Data Augmentation for Rare Object Detection in Autonomous Driving. arXiv, 2205.00376. Retrieved from https://arxiv.org/abs/2205.00376v2
+5. Osokin, A., Sumin, D., & Lomakin, V. (2020). OS2D: One-Stage One-Shot Object Detection by Matching Anchor Features. arXiv, 2003.06800. Retrieved from https://arxiv.org/abs/2003.06800v2
+6. Chen, F., Zhang, H., Li, Z., Dou, J., Mo, S., Chen, H., ...Savvides, M. (2022). Unitail: Detecting, Reading, and Matching in Retail Scene. arXiv, 2204.00298. Retrieved from https://arxiv.org/abs/2204.00298v4
+7. Lee, K., Yang, H., Chakraborty, S., Cai, Z., Swaminathan, G., Ravichandran, A., & Dabeer, O. (2022). Rethinking Few-Shot Object Detection on a Multi-Domain Benchmark. arXiv, 2207.11169. Retrieved from https://arxiv.org/abs/2207.11169v1
+8. Bar, A., Wang, X., Kantorov, V., Reed, C. J., Herzig, R., Chechik, G., ...Globerson, A. (2021). DETReg: Unsupervised Pretraining with Region Priors for Object Detection. arXiv, 2106.04550. Retrieved from https://arxiv.org/abs/2106.04550v5
+9. Ciaglia, F., Zuppichini, F. S., Guerrie, P., McQuade, M., & Solawetz, J. (2022). Roboflow 100: A Rich, Multi-Domain Object Detection Benchmark. arXiv, 2211.13523. Retrieved from https://arxiv.org/abs/2211.13523v3
+10. Bai, H., Mou, S., Likhomanenko, T., Cinbis, R. G., Tuzel, O., Huang, P., ...Cao, M. (2023). VISION Datasets: A Benchmark for Vision-based InduStrial InspectiON. arXiv, 2306.07890. Retrieved from https://arxiv.org/abs/2306.07890v2
+11. Gupta, A., Dollár, P., & Girshick, R. (2019). LVIS: A Dataset for Large Vocabulary Instance Segmentation. arXiv, 1908.03195. Retrieved from https://arxiv.org/abs/1908.03195v2
+12. Zhang, Y., Sun, Q., Zhou, Y., He, Z., Yin, Z., Wang, K., ...Liu, Z. (2022). Bamboo: Building Mega-Scale Vision Dataset Continually with Human-Machine Synergy. arXiv, 2203.07845. Retrieved from https://arxiv.org/abs/2203.07845v2
+13. Xiong, W. (2022). CD-FSOD: A Benchmark for Cross-domain Few-shot Object Detection. arXiv, 2210.05311. Retrieved from https://arxiv.org/abs/2210.05311v3
+14. Lin, T.-Y., Maire, M., Belongie, S., Bourdev, L., Girshick, R., Hays, J., ...Dollár, P. (2014). Microsoft COCO: Common Objects in Context. arXiv, 1405.0312. Retrieved from https://arxiv.org/abs/1405.0312v3
+
+Task formats: classification, detection, segmentation, retrieval (also weakly-supervised detection, amodal detection, pose estimation) etc.
+
+Learning sequence: long-tail detection, few-shot detection, continual learning.
+
+Abilities: classification (narrow object-vs-background or wide objects-vs-similar objects), localization, instance separation.
+
+Relation of tasks and abilities. For example, sometimes detection is reduced to classification.
+
+Relation to pretraining: known object, subclass of known object, part of known object, not annotated seen object, unseen object.
+
+Special case: self-supervised and image-text pretraining. What is "known" object?
+
+Concept width: exact shape and texture, ragdoll, texture patch, wide concept, wide known concept with special detail.
+
+Domain: natural images, x-ray images, drawings etc.
+
+Training annotation: boxes, points, image-level, sparse annotations.
+
+Training data size: count of positives samples, count of negative samples/images/sum_area.
+
+Text: using or not using class name and/or description.
+
+Appearance: iconic view, canonical view, in-the-wild view, poor visibility.
+
+Special cases: dense detection, poorly visible objects (detection based on context and statistics), detection with static background.
+
+6 ways to collect:
+- web search
+- LAION KNN search (unknown model biases)
+- CommonPool text search (known human biases)
+- specific datasets
+- photographing
+- synthetic images
+
+Taxonomy:
+exact visual concept (yellow mingren soda) - narrow or wide visual concept (knife, animal)
+matches pretraining class - subclass/superclass of pretraining class - part of pretraining class - usual not annotated object - unusual object
+
+Problem: some objects are heavily associated with context and background (for example, snowboard)
+Ideal case: indirect search without mentioning an object
+
+Scenarios:
+localization - classification - instance entangling - unsupervised part discovery
+accuracy on objects - accuracy on similar objects - accuracy on dissimilar objects and background - accuracy on synthetic/sketches
+canonical-to-non-canonical generalization
+accuracy on simple scenes - on complex scenes - on complex synthetic scenes
+natural images - synthetic images - unnatural domains
+annotation: object - object(ambiguous box) - unknown - similar
+N positive samples/images/sum_area, N negative samples/images/sum_area
+with or without usage of class name and description
+box/point/image-level annotation
+
+Filter out edge cases (badly visible, child, unusual, drawing, render, very similar species)
+
+Дикие животные - Барсук, Пеликан, Панда, Кобра, Крокодил
+Растения и плоды - Кактус, Орхидея, Цикламен, Помидор
+Товары и бытовые предметы - Coca-Cola, Tobasco, Tide, Теннисная ракетка, Продуктовая корзина, Пылесос, Отвертка, Лопата
+Части известных классов - Рюкзак, Кепка, Ботинки, Бейджик, Каска
+Дефекты - Трещины в стекле, Вмятины, Пятна
+Предметы городского окружения - Дорожный конус, Дверь, Здание, Экскаватор
+Вывески - Apple, Сбербанк, Samsung, Ашан, Любая вывеска
+Элементы сайтов и документов - Шапка сайта, Заголовок документа, Подпись
+
+метки: text search, google search, KNN search
+direct and indirect search
+one or multiple foreground objects?
+
+we need taxonomy if we believe that it can affect the performance
+
+целью FSL считается обучение новым классам, которые модель не видела. Но для self-supervised -> COCO модели что такое новый класс?
+
+на чем в первую очередь надо проверить?
+- на совершенно новых объектах
+- на объектах, виденных но не отмеченных при обучении детекции
+- на подклассах известных классов
+- на частях известных классов
+
+альтернатива детекции: выдача N координат и масштабов для N заданных частей каждого объекта
+
+most of previous FSL and OD papers were focused on models
+out work is foceused on data, our goal is not to compare a lot of models, but to compare a lot of task types using several models
+
+spcific shap means specific models, so such images may be hard to found
+
+There is a common belief that the true power of ML comes with big data. However, in some scenarios data scarcity is an unavoidable limitation. For example:
+- If we do a pseudo-labeling while annotating data
+- If an agent learns novel objects from it's own experience, like humans do during all their life
+- If we detect rare animals
+- If we detect SKU (goods)
+- If we want an agent to learn specific parts of the known object to interact with it
+There is a popular belief that modern CV models reach or even outperform humans. However, several studies show that in low data regime performance of CV-models is poor, while human very easily learns a new object from few examples.
+We believe that the importance of few-shot vision will grow in the future because:
+- Embodied AI will become more widespread, while FSL is important in embodied AI
+- Multimodal chatbots will become more widespread, and user prompts may often relate to few-shot scenario.
+Most of FSL papers work on image-level (classification, image retrieval). However, in many cases this may be not enough. For example, embodied agents should not only classify, but also locate an object and separate instances. On the other side, instance segnemtation may be too much in most cases (accurate edges are often not required on inference and costly to annotate). So, object detection is the most realistic scenario (points, boxes, oriented boxes or 3D boxes).
+
+FSOD is also interesting in several theoretical aspects, since it is closely related to the part-whole hierarchy understanding. There is a long-standing open question if CV models understand objects in terms of their parts, or not.
+1. Often a new, previously unknown objects may be described in several words, describing it's parts and relations. This means that a new object may be described as a new combination of known parts. This suggests that if model sees the world as parts and combintions, it may be easier for it to learn new object in few samples.
+2. Do pretrained models learn robust representations of parts of common objects (DINOv2)? If so, such models may easily (in few samples and parameter-efficient way) adapt to the task when it's needed to detect some part of known object (human's head, excavator's bucket etc.). If no, such task may be as hard as learning the object from scratch.
+
+We:
+1) Develop FSOD task taxonomy, limit ourselves to several scanarios
+1) Collect datasets
+2) Develop metric
+3) Test models
+
+проблема: если объект частично загорожен и виден только ковш - непонятно экскаватор это или нет
+если игнорируем такие изображения - то не проверяем способность модели работать в условиях окклюзии
+
+например, экскаватор - сложный случай. Есть много пограничных случаев:
+Бывает, что вместо ковша установлено что-то другое, например отбойным молоток, или наоборот ковш прицеплен к другому средству.
+Бывают горнодобывающие экскаваторы, совсем не похожие на обычные.
+На практике иногда разумно отметить объект как экскаватор даже если мы не видим на 100% ковш, или наоборот видим только ковш
+
+Каково решение?
+
+Как вариант, можно представить что пограничных случаев не существует: исключить из трейна и теста 
+
+As a general solution, we can run different scenarios. (examples) Different scenarios may uncover different important properties of the model, for example, can a model learn to detect excavator, but not detect a standalone excavator bucket, or detect a cyclist but not detect a wall painting of cyclist. This may be a good work for the future, but in this work we test only a simple scenario when edge cases are excluded both from train and test.
+
+Метрика! Каждый бокс имеет вес 1/N, где N - кол-во боксов на изображении
+
+! Детекция экскаваторов во few-shot - не очень реальная задача
+
+Тестирование мы можем основывать на протоколах. Например:
+"выдели экскаватор (10 картинок-примеров с боксами), то есть тяжелую технику с ковшом, но не выделяй экскаватор-погрузчик с грейдером (10 картинок-примеров с боксами)"
+В данном протоколе:
+- даем названия, описания и визуальные примеры
+- используем box-аннотации
+- специально указываем особый тип негативных примеров
+- обучаем на iconic и тестируем на in-the-wild
+
+Как выбрать протоколы так, чтобы:
+1) они тестировали реалистичные юз-кейсы
+2) они проверяли, воспринимает ли модель как сочетание составляющих частей, понимает ли ориентацию объекта
+
+Генеративная или дискриминативная модель?
+Допустим отображение Пиксели -> латенты частей объекта идеально, и мы знаем расположение частей объекта
+Как оценить, в правильном ли порядке они расположены, относятся ли к одному объекту?
+Видимо, для этого надо вывести более высокоуровневые латенты, отвечающие за ориентацию и масштаб, и проверить,
+    существуют ли такие их значения, что латенты частей объекта в них укладываются?
+это удобнее делать дискриминативной или генеративной моделью?
+Дискр.: латенты частей -> латенты ориентации+масштаба ИЛИ ноль, если не подходят
+Генер.: латенты частей -> латенты ориентации+масштаба -> латенты частей -> ошибка восстановления
+Как удобнее?
+
+Ignored for all classes:
+    - too small or occluded to clearly recognize (before any resize in pipeline)
+    - all ground truth or predictions less than required size (still trying to annotate them)
+    - not a photos (drawings etc.)
+    - collages
+
+Excavator:
+    ignored:
+    - excavator with something instead of bucket (drill etc.)
+    - excavator where bucket is not clearly seen
+    - bulldozer with excavator bucket
+    - bucket-wheel mining excavator
+    - excavator with unusual or reversed bucket
+
+Excavator bucket:
+    ignored:
+    - unusual or reversed bucket
+    - bucket-wheel mining excavator
+    - detached bucket
+
+Traffic cone:
+    ignored:
+    - unusual color or shape traffic cones
+    - stack of traffic cones
+    - too dense placement of traffic cones
+    - traffic cone on someone's head
+
+Concrete mixer:
+    ignored:
+    - unusual
+    - with reversed supplier
+    - not on the truck
+
+Caterpillar "CAT" logo
+
+Road roller
+    ignored:
+    - mini rollers
+
+European badger:
+    ignored:
+    - american badger
+    - honey badger
+
+Pools:
+    "heavy equipment" pool
+    - annotation for excavator
+    - annotation for special model of excavator
+    - annotation for bulldozer
+    - etc.
